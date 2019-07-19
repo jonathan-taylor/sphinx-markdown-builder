@@ -493,7 +493,7 @@ class Translator(nodes.NodeVisitor):
         code_type = node['classes'][1] if 'code' in node['classes'] else ''
         if 'language' in node:
             code_type = node['language']
-        self.add('```' + code_type + '\n')
+        self.add('```{' + code_type + '}\n')
 
     def depart_literal_block(self, node):
         self._escape_text = True
