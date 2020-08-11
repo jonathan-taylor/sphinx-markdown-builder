@@ -3,3 +3,4 @@ pydash>=4.7.5
 sphinx>=2.2.0
 unify>=0.5
 yapf>=0.28.0
+docutils>=0.14
