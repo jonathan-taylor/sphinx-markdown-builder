@@ -50,6 +50,18 @@ class MarkdownTranslator(Translator):
     def depart_desc(self, node):
         pass
 
+    def visit_math_block(self, node):
+        pass
+
+    def depart_math_block(self, node):
+        pass
+
+    def visit_math(self, node):
+        pass
+
+    def depart_math(self, node):
+        pass
+
     def visit_desc_annotation(self, node):
         # annotation, e.g 'method', 'class'
         self.add('_')
@@ -211,6 +223,18 @@ class MarkdownTranslator(Translator):
         """Image directive."""
         pass
 
+    def visit_figure(self, node):
+        """
+        Figure directive
+        """
+        pass
+
+    def depart_figure(self, node):
+        """
+        Figure directive
+        """
+        pass
+    
     def visit_autosummary_table(self, node):
         """Sphinx autosummary See http://www.sphinx-
         doc.org/en/master/usage/extensions/autosummary.html."""
