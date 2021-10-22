@@ -462,16 +462,16 @@ class Translator(nodes.NodeVisitor):
     def visit_math_block(self, node):
         # docutils math block
         self._escape_text = False
-        self.add('$$\n')
+        self.add('$$')
 
     def depart_math_block(self, node):
         self._escape_text = True
         self.ensure_eol()
-        self.add('$$\n\n')
+        self.add('$$\n\n\n\n')
 
     def visit_displaymath(self, node):
         # sphinx math blocks become displaymath
-        self.add('$$\n{}\n$$\n\n'.format(node['latex']))
+        self.add('$$\n{}\n$$\n\n'.format(node['latex'].strip()))
         raise nodes.SkipNode
 
     def visit_math(self, node):
@@ -491,9 +491,11 @@ class Translator(nodes.NodeVisitor):
     def visit_literal_block(self, node):
         self._escape_text = False
         code_type = node['classes'][1] if 'code' in node['classes'] else ''
-        if 'language' in node:
+        if 'language' in node.attributes:
+            code_type = node.attributes['language']
+        if 'language' in node.attributes['classes']:
             code_type = node['language']
-        self.add('```{' + code_type + '}\n')
+        self.add('\n\n```{' + code_type + '}\n')
 
     def depart_literal_block(self, node):
         self._escape_text = True
@@ -502,7 +504,7 @@ class Translator(nodes.NodeVisitor):
 
     def visit_doctest_block(self, node):
         self._escape_text = False
-        self.add('```python\n')
+        self.add('```{python}\n')
 
     depart_doctest_block = depart_literal_block
 
@@ -579,7 +581,7 @@ class Translator(nodes.NodeVisitor):
             return url
         # If HTTP page build URL known, make link relative to that.
         if not self.markdown_http_base:
-            return f'#{node.get("refid")}'
+            return "%s" % node.get("refid")
         this_doc = self.builder.current_docname
         if url in (None, ''):  # Reference to this doc
             url = self.builder.get_target_uri(this_doc)

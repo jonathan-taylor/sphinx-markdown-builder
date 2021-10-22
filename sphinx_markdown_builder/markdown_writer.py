@@ -35,6 +35,24 @@ class MarkdownTranslator(Translator):
                         rows.append(node)
         return rows
 
+    def visit_CellNode(self, node):
+        pass
+
+    def depart_CellNode(self, node):
+        pass
+
+    def visit_CellInputNode(self, node):
+        node.children[0]['language'] = 'r'
+
+    def depart_CellInputNode(self, node):
+        pass
+
+    def visit_CellOutputNode(self, node):
+        raise nodes.SkipNode
+
+    def depart_CellOutputNode(self, node):
+        pass
+
     def visit_document(self, node):
         pass
 
@@ -48,18 +66,6 @@ class MarkdownTranslator(Translator):
         pass
 
     def depart_desc(self, node):
-        pass
-
-    def visit_math_block(self, node):
-        pass
-
-    def depart_math_block(self, node):
-        pass
-
-    def visit_math(self, node):
-        pass
-
-    def depart_math(self, node):
         pass
 
     def visit_desc_annotation(self, node):
@@ -217,7 +223,11 @@ class MarkdownTranslator(Translator):
             uri = uri[len(doc_folder):]
             if uri.startswith('/'):
                 uri = '.' + uri
-        self.add('\n\n![image](%s)\n\n' % uri)
+        fmt = {'uri':uri}
+        fmt['alt'] = node.attributes['alt'] if 'alt' in node.attributes else ''
+        fmt['height'] = '{height=%s}' % node.attributes['height'] if 'height' in node.attributes else ''
+        fmt['width'] = '{width=%s}' % node.attributes['width'] if 'width' in node.attributes else ''
+        self.add('\n\n![%(alt)s](%(uri)s)%(height)s%(width)s\n\n' % fmt)
 
     def depart_image(self, node):
         """Image directive."""
@@ -262,16 +272,15 @@ class MarkdownTranslator(Translator):
     #         docutils.nodes.row
     #         docutils.nodes.entry
 
-    def visit_math_block(self, node):
-        pass
-
-    def depart_math_block(self, node):
-        pass
-
     def visit_raw(self, node):
         self.descend('raw')
+        if node.parent.tagname == 'entry':
+            self.add(node.astext().strip())
+            sys.stderr.write('did it!\n')
+            raise nodes.SkipNode
 
     def depart_raw(self, node):
+        #if node.parent.tagname != 'entry':
         self.ascend('raw')
 
     def visit_table(self, node):
@@ -279,7 +288,7 @@ class MarkdownTranslator(Translator):
 
     def depart_table(self, node):
         self.tables.pop()
-
+        self.add('\n\n')
     def visit_tabular_col_spec(self, node):
         pass
 
@@ -308,10 +317,10 @@ class MarkdownTranslator(Translator):
             length = 0
             for row in self.table_rows:
                 if len(row.children) > i:
-                    entry_length = len(row.children[i].astext())
+                    entry_length = len(row.children[i].astext())# .strip())
                     if entry_length > length:
                         length = entry_length
-            self.add('| ' + ''.join(_.map(range(length), lambda: '-')) + ' ')
+            self.add('| ------') #  + ''.join(_.map(range(length), lambda: '-')) + ' ')
         self.add('|\n')
         self.table_entries = []
         self.theads.pop()
@@ -337,19 +346,23 @@ class MarkdownTranslator(Translator):
     def visit_enumerated_list(self, node):
         self.depth.descend('list')
         self.depth.descend('enumerated_list')
+        self.add('\n')
 
     def depart_enumerated_list(self, node):
         self.enumerated_count[self.depth.get('list')] = 0
         self.depth.ascend('enumerated_list')
         self.depth.ascend('list')
+        self.add('\n')
 
     def visit_bullet_list(self, node):
         self.depth.descend('list')
         self.depth.descend('bullet_list')
-
+        self.add('\n')
+        
     def depart_bullet_list(self, node):
         self.depth.ascend('bullet_list')
         self.depth.ascend('list')
+        self.add('\n')
 
     def visit_list_item(self, node):
         self.depth.descend('list_item')
@@ -366,25 +379,33 @@ class MarkdownTranslator(Translator):
 
     def depart_list_item(self, node):
         self.depth.ascend('list_item')
-
+        self.add('\n')
+        
     def visit_entry(self, node):
         if not len(self.table_rows):
             raise nodes.SkipNode
         self.table_entries.append(node)
         self.add('| ')
 
+    def depart_paragraph(self, node): # for tables
+        if node.parent.tagname == 'entry':
+            pass
+        else:
+            Translator.depart_paragraph(self, node)
+            
     def depart_entry(self, node):
-        length = 0
-        i = len(self.table_entries) - 1
-        for row in self.table_rows:
-            if len(row.children) > i:
-                entry_length = len(row.children[i].astext())
-                if entry_length > length:
-                    length = entry_length
-        padding = ''.join(
-            _.map(range(length - len(node.astext())), lambda: ' ')
-        )
-        self.add(padding + ' ')
+        pass
+        # length = 0
+        # i = len(self.table_entries) - 1
+        # for row in self.table_rows:
+        #     if len(row.children) > i:
+        #         entry_length = len(row.children[i].astext())
+        #         if entry_length > length:
+        #             length = entry_length
+        # padding = ''.join(
+        #     _.map(range(length - len(node.astext())), lambda: ' ')
+        # )
+        # self.add(padding + ' ')
 
     def descend(self, node_name):
         self.depth.descend(node_name)
